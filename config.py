@@ -1,16 +1,16 @@
 import pygame
 
-ANCHO, ALTO = 800, 600
+ANCHO, ALTO = 1142, 720
 COLOR_FONDO = (0, 0, 0)
 
 #Simulador de campo electrico
 
-RADIO_CARGA = 15
+RADIO_CARGA = 25
 K = 8.99e9  
 PASO_TIEMPO = 0.0002 
 FPS = 60
-SEPARACION_PUNTOS = 20 
-COLOR_CAMPO = (0, 255, 0)
+SEPARACION_PUNTOS = 40 
+COLOR_CAMPO = (255, 255, 255)
 
 #Estados
 CARGA_PRUEBA = False

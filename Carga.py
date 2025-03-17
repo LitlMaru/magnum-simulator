@@ -1,17 +1,7 @@
 import pygame
 import math
 import config
-
-def dibujar_imagen(pantalla, direccion, posicion, escala=None, rotacion=0):
-    imagen = pygame.image.load(direccion).convert_alpha() 
-    if escala:
-        imagen = pygame.transform.scale(imagen, (imagen.get_width() * escala, imagen.get_height() * escala))
-    if rotacion:
-        imagen = pygame.transform.rotate(imagen, rotacion)
-
-    rect = imagen.get_rect(center=posicion) 
-    pantalla.blit(imagen, rect)  
-
+from Utilidades import dibujar_imagen
 class Carga:
     def __init__(self, x, y, q, esCargaDePrueba, pantalla, masa = 1):
         self.x = x
@@ -75,6 +65,6 @@ class Carga:
             self.x += self.vx * config.PASO_TIEMPO
             self.y += self.vy * config.PASO_TIEMPO
         if self.q > 0:
-            dibujar_imagen(self.pantalla, "Imagenes/cargaPositiva.png", (int(self.x), int(self.y)), 0.12)
+            dibujar_imagen(self.pantalla, "Imagenes/cargaPositiva.png", (int(self.x), int(self.y)), 0.12, 0.12)
         else:
-            dibujar_imagen(self.pantalla, "Imagenes/cargaNegativa.png", (int(self.x), int(self.y)), 0.12)
+            dibujar_imagen(self.pantalla, "Imagenes/cargaNegativa.png", (int(self.x), int(self.y)), 0.12, 0.12)
