@@ -24,7 +24,7 @@ def make_surface_rgba(array):
     return surface
 
 
-def dibujar_imagen(pantalla, direccion, posicion, escala_x=None, escala_y=None, rotacion=0):
+def dibujar_imagen(pantalla, direccion, posicion, escala_x=None, escala_y=None, rotacion=0, alpha = None):
     imagen = pygame.image.load(direccion).convert_alpha() 
     if escala_x:
         imagen = pygame.transform.scale(imagen, (imagen.get_width() * escala_x, imagen.get_height()))
@@ -33,6 +33,9 @@ def dibujar_imagen(pantalla, direccion, posicion, escala_x=None, escala_y=None, 
 
     if rotacion:
         imagen = pygame.transform.rotate(imagen, rotacion)
+
+    if alpha:
+        imagen.set_alpha(alpha)
 
     rect = imagen.get_rect(center=posicion) 
     pantalla.blit(imagen, rect)  

@@ -18,8 +18,11 @@ meter_rect = meter_img.get_rect()
 
 cargas = []
 carga_seleccionada = None
+carga_a_eliminar = None
 mostrar_potencial = False
 mostrar_voltaje = False
+
+id_carga = 0
 
 #Dibujar el indicador de potencial
 def dibujar_potencial(texto_potencial):
@@ -91,7 +94,6 @@ def dibujar_campo():
             magnitud = math.sqrt(ex ** 2 + ey ** 2)
             if magnitud > 0:
                 ex, ey = ex * magnitud / config.K, ey * magnitud / config.K
-                if (x,y) == (400,400): print(ex, ey)
                 factor = min(magnitud ** (3/5) / 1000, 1.4)
                 dibujar_imagen(pantalla, "Imagenes/vectorSmall.png", (x, y), 0.4, 0.4*factor, 180 + math.degrees(math.atan2(ex,ey)))
                 #pygame.draw.line(pantalla, config.COLOR_CAMPO, (x, y), (x + ex, y + ey), 1)
@@ -99,11 +101,11 @@ def dibujar_campo():
 #Creacion de botones
 boton_dinamico = Boton(15, 15, "Imagenes/estaticoBoton.png", "Imagenes/estaticoBotonHover.png", "Imagenes/dinamicoBoton.png", "Imagenes/dinamicoBotonHover.png", 0.6)
 boton_animar = Boton(15, 55, "Imagenes/iniciarAnimacionBoton.png", "Imagenes/iniciarAnimacionHover.png", "Imagenes/detenerAnimacionBoton.png", "Imagenes/detenerAnimacionHover.png", 0.6)
-boton_resetear = Boton(15, 95, "Imagenes/resetearBoton.png", "Imagenes/resetearBotonHover.png", None, None, 0.6) 
-boton_positivo = Boton(720, 15, "Imagenes/cargaPositivaBoton.png", "Imagenes/cargaPositivaBotonHover.png", None, None, 0.5)
-boton_negativo = Boton(720, 75, "Imagenes/cargaNegativaBoton.png", "Imagenes/cargaNegativaBotonHover.png", None, None, 0.5)
-checkbox_potencial = Boton(660, 130, "Imagenes/checkboxVoltaje.png", "Imagenes/checkboxVoltaje.png", "Imagenes/checkboxVoltajeVerde.png", "Imagenes/checkboxVoltajeVerde.png", 0.6)
-checkbox_voltaje = Boton(660, 190, "Imagenes/Voltaje.png", "Imagenes/Voltaje.png", "Imagenes/VoltajeVerde.png", "Imagenes/VoltajeVerde.png", 0.6)
+boton_resetear = Boton(15, 100, "Imagenes/resetearBoton.png", "Imagenes/resetearBotonHover.png", None, None, 0.6) 
+boton_positivo = Boton(900, 15, "Imagenes/cargaPositivaBoton.png", "Imagenes/cargaPositivaBotonHover.png", None, None, 0.5)
+boton_negativo = Boton(900, 75, "Imagenes/cargaNegativaBoton.png", "Imagenes/cargaNegativaBotonHover.png", None, None, 0.5)
+checkbox_potencial = Boton(860, 140, "Imagenes/checkboxPotencial.png", "Imagenes/checkboxPotencial.png", "Imagenes/checkboxPotencialVerde.png", "Imagenes/checkboxPotencialVerde.png", 0.6)
+checkbox_voltaje = Boton(860, 190, "Imagenes/Voltaje.png", "Imagenes/Voltaje.png", "Imagenes/VoltajeVerde.png", "Imagenes/VoltajeVerde.png", 0.55)
 
 ejecutando = True
 while ejecutando:
@@ -127,8 +129,14 @@ while ejecutando:
             for carga in cargas:
                 if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
                     carga_seleccionada = carga
-                    print(carga_seleccionada)
                     break
+
+            if event.button == 3:
+                for carga in cargas: 
+                    if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
+                        cargas = [carga for carga in cargas if carga.id != carga_seleccionada.id]
+                        break
+
         elif event.type == pygame.MOUSEBUTTONUP:
             carga_seleccionada = None
         elif event.type == pygame.MOUSEMOTION and carga_seleccionada and not boton_animar.activo:
@@ -145,18 +153,22 @@ while ejecutando:
             cargas.clear()
 
         if boton_positivo.controlar_eventos(event):
+            id_carga+=1
             if config.CARGA_PRUEBA:
                 cargas.append(Carga(config.ANCHO/2, config.ALTO/2, 1, True, pantalla))
+                cargas[-1].id = id_carga
             else:
                 cargas.append(Carga(config.ANCHO/2, config.ALTO/2, 1, False, pantalla))
-            print(len(cargas))
+                cargas[-1].id = id_carga
 
         if boton_negativo.controlar_eventos(event):
+            id_carga+=1
             if config.CARGA_PRUEBA:
                 cargas.append(Carga(config.ANCHO/2, config.ALTO/2, -1, True, pantalla))
+                cargas[-1].id = id_carga
             else:
                 cargas.append(Carga(config.ANCHO/2, config.ALTO/2, -1, False, pantalla))
-            print(len(cargas))
+                cargas[-1].id = id_carga
 
         if checkbox_potencial.controlar_eventos(event):
             mostrar_potencial = not mostrar_potencial

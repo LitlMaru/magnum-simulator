@@ -1,6 +1,6 @@
 import pygame
 
-ANCHO, ALTO = 1142, 720
+ANCHO, ALTO = 1016, 640
 COLOR_FONDO = (0, 0, 0)
 
 #Simulador de campo electrico

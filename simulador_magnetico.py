@@ -23,8 +23,10 @@ pygame.display.set_caption("Simulación de Campo Magnético")
 textboxFuerza_imagen = pygame.image.load("Imagenes/textboxFuerza.png")
 textboxFuerza__rect = textboxFuerza_imagen.get_rect(topleft=(800, 400))
 
+input_box = pygame.Rect(100, 100, 140, 30)
 fuerza = "" 
 textboxActivo = False
+input_box = pygame.Rect(130, 90, 140, 30)
 
 
 # Clase para representar un imán con dos polos
@@ -76,14 +78,17 @@ def campo_magnetico(x, y, imanes):
 
 # Función para dibujar líneas de campo
 def dibujar_campo(imanes):
-    for x in range(0, ancho, 30):
-        for y in range(0, alto, 30):
+    for x in range(0, ancho, 40):
+        for y in range(0, alto, 40):
             Bx, By = campo_magnetico(x, y, imanes)
             if Bx or By:
                 magnitud = np.hypot(Bx, By)
+                if (x,y) == (200,200): print(f"(200,200): {magnitud}")
+                if (x,y) == (800,400): print(f"(800,400): {magnitud}")
                 Bx, By = (Bx / magnitud) * 10, (By / magnitud) * 10
-                pygame.draw.line(pantalla, WHITE, (x, y), (x + Bx, y + By), 1)
-                pygame.draw.circle(pantalla, WHITE, (int(x + Bx), int(y + By)), 2)
+                #pygame.draw.line(pantalla, WHITE, (x, y), (x + Bx, y + By), 1)
+                #pygame.draw.circle(pantalla, WHITE, (int(x + Bx), int(y + By)), 2)
+                dibujar_imagen(pantalla, "Imagenes/vectorMagnetico.png", (x, y), 0.4, 0.4,  180 + math.degrees(math.atan2(Bx, By)), min(abs(magnitud * 10000), 255))
 
 # Lista de imanes y brújula
 imanes = [Iman(ancho// 2, alto // 2, 1)]
@@ -91,7 +96,8 @@ brujula = Brujula(ancho * 1 // 3, alto * 1 // 3)
 iman_seleccionado = None
 brujula_seleccionada = None
 
-boton_brujula = Boton(800, 100, "Imagenes/checkboxBrujula.png", "Imagenes/checkboxBrujula.png", "Imagenes/checkboxBrujulaVerde.png", "Imagenes/checkboxBrujulaVerde.png", 0.7)
+boton_iman = Boton(800, 500, "Imagenes/AgregarIman.png", "Imagenes/AgregarImanHover.png", None, None, 0.7)
+boton_brujula = Boton(800, 100, "Imagenes/checkboxBrujulaVerde.png", "Imagenes/checkboxBrujulaVerde.png", "Imagenes/checkboxBrujula.png", "Imagenes/checkboxBrujula.png", 0.7)
 boton_medidor_estatico = Boton(800, 180, "Imagenes/checkboxMedidorEstatico.png", "Imagenes/checkboxMedidorEstatico.png", "Imagenes/checkboxMedidorEstaticoVerde.png", "Imagenes/checkboxMedidorEstaticoVerde.png", 0.7)
 # Bucle principal
 ejecutando = True
@@ -100,6 +106,7 @@ while ejecutando:
     dt = reloj.tick(60) / 1000  # Delta time en segundos
     pantalla.fill(BLACK)
     dibujar_campo(imanes)
+    pantalla.blit(textboxFuerza_imagen, textboxFuerza__rect)
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -121,30 +128,32 @@ while ejecutando:
             brujula_seleccionada = None
 
         elif event.type == pygame.KEYDOWN:
-            if textboxActivo:
+           if textboxActivo:
                 if event.key == pygame.K_RETURN:
                     pass
                 elif event.key == pygame.K_BACKSPACE:
                     fuerza = fuerza[:-1]
-                elif event.key in {pygame.K_0, pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5, pygame.K_6, pygame.K_7, pygame.K_8, pygame.K_9}:
+                elif event.unicode.isdigit() or (event.unicode == '.' and '.' not in fuerza):
                     fuerza += event.unicode
-                else: pass
         
         if boton_brujula.controlar_eventos(event):
             mostrarBrujula = not mostrarBrujula
 
         if boton_medidor_estatico.controlar_eventos(event):
             mostratMedidorEstatico = not mostratMedidorEstatico
+
+        if boton_iman.controlar_eventos(event):
+            imanes.append(Iman(config.ANCHO//2, config.ALTO //2, float(fuerza)))
     
     if iman_seleccionado:
         iman_seleccionado.x, iman_seleccionado.y = pygame.mouse.get_pos()
     if brujula_seleccionada:
         brujula.x, brujula.y = pygame.mouse.get_pos()
     
-    pantalla.blit(textboxFuerza_imagen, textboxFuerza__rect.topleft)
+    pantalla.blit(textboxFuerza_imagen, textboxFuerza__rect)
 
-    superficieTexto = fuente.render(fuerza, True, WHITE)
-
+    superficieTexto = fuente.render(fuerza, True, RED)
+    pantalla.blit(superficieTexto, (input_box.x + 5, input_box.y + 5))
     if textboxActivo:
         cursor_rect = pygame.Rect(textboxFuerza__rect.topright, (2, textboxFuerza__rect.height))
         pygame.draw.rect(pantalla, BLACK, cursor_rect)
@@ -164,6 +173,7 @@ while ejecutando:
 
     boton_brujula.dibujar(pantalla)
     boton_medidor_estatico.dibujar(pantalla)
+    boton_iman.dibujar(pantalla)
     
     pygame.display.flip()
 

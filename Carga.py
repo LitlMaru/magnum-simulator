@@ -14,6 +14,7 @@ class Carga:
         self.masa = masa
         self.pantalla = pantalla
         self.esCargaDePrueba = esCargaDePrueba
+        self.id = None
 
     def fuerza_por(self, other):
         dx = other.x - self.x
