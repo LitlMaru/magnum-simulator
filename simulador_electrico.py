@@ -33,9 +33,8 @@ id_carga = 0
 
 #Dibujar el indicador de potencial
 def dibujar_potencial(texto_potencial):
-
     pantalla.blit(meter_img, meter_rect)
-    rect_texto = texto_potencial.get_rect(center = (mx, my + 85))
+    rect_texto = texto_potencial.get_rect(center = (pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1] + 85))
     pantalla.blit(texto_potencial, rect_texto)
 
 
@@ -168,19 +167,18 @@ def main():
                     ctypes.windll.user32.ReleaseCapture()
                     ctypes.windll.user32.SendMessageW(hwnd, 0xA1, 2, 0)  # Move window
 
-            #Mover cargas usando el mouse
-            elif event.type == pygame.MOUSEBUTTONDOWN and not boton_animar.activo:
-                mx, my = pygame.mouse.get_pos()
-                for carga in cargas:
-                    if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
-                        carga_seleccionada = carga
-                        break
-
-                if event.button == 3:
-                    for carga in cargas: 
+                if not boton_animar.activo:
+                    mx, my = pygame.mouse.get_pos()
+                    for carga in cargas:
                         if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
-                            cargas = [carga for carga in cargas if carga.id != carga_seleccionada.id]
+                            carga_seleccionada = carga
                             break
+
+                    if event.button == 3:
+                        for carga in cargas: 
+                            if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
+                                cargas = [carga for carga in cargas if carga.id != carga_seleccionada.id]
+                                break
 
             elif event.type == pygame.MOUSEBUTTONUP:
                 carga_seleccionada = None

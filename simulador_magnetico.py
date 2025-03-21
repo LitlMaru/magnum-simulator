@@ -43,10 +43,7 @@ fuerza = ""
 textboxActivo = False
 input_box = pygame.Rect(860, 304, 140, 30)
 
-
-def dibujar_texto_medidor(texto, salto):
-    rect_texto = texto.get_rect(topleft = (mx - 40, my + salto))
-    pantalla.blit(texto, rect_texto)
+#def dibujar_texto_medidor(texto, salto):
 
 # Clase para representar un imán con dos polos
 class Iman:
@@ -144,7 +141,6 @@ def main():
         texto_By = fuente.render(f"By: {mBy:.2f} G", True, (255, 255, 255))
         texto_θ = fuente.render(f"\u03b8: {mAngulo:.2f}°", True, (255, 255, 255))
         
-        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 ejecutando = False
@@ -153,7 +149,7 @@ def main():
                 for iman in imanes:
                     if abs(mx - iman.x) < iman.ancho // 2 and abs(my - iman.y) < iman.alto // 2:
                         iman_seleccionado = iman
-                if np.hypot(mx - brujula.x, my - brujula.y) < 15:
+                if np.hypot(mx - brujula.x, my - brujula.y) < 70:
                     brujula_seleccionada = brujula
 
                 if textboxFuerza__rect.collidepoint(event.pos):
@@ -190,7 +186,8 @@ def main():
                 mostrarMedidorEstatico = not mostrarMedidorEstatico
 
             if boton_iman.controlar_eventos(event):
-                imanes.append(Iman(config.ANCHO//2, config.ALTO //2, float(fuerza)))
+                if fuerza != "":
+                    imanes.append(Iman(config.ANCHO//2, config.ALTO //2, float(fuerza)))
                 fuerza = ""
 
             if boton_cerrar.controlar_eventos(event):
@@ -238,10 +235,14 @@ def main():
         
         if mostrarMedidorEstatico:
             pantalla.blit(medidor_img, medidor_rect)
-            dibujar_texto_medidor(texto_B, 139)
-            dibujar_texto_medidor(texto_Bx, 159)
-            dibujar_texto_medidor(texto_By, 179)
-            dibujar_texto_medidor(texto_θ, 199)
+            rect_texto1 = texto_B.get_rect(topleft = (pygame.mouse.get_pos()[0] - 40, pygame.mouse.get_pos()[1] + 80))
+            pantalla.blit(texto_B, rect_texto1)
+            rect_texto1 = texto_Bx.get_rect(topleft = (pygame.mouse.get_pos()[0] - 40, pygame.mouse.get_pos()[1] + 100))
+            pantalla.blit(texto_Bx, rect_texto1)
+            rect_texto1 = texto_By.get_rect(topleft = (pygame.mouse.get_pos()[0] - 40, pygame.mouse.get_pos()[1] + 120))
+            pantalla.blit(texto_By, rect_texto1)
+            rect_texto1 = texto_θ.get_rect(topleft = (pygame.mouse.get_pos()[0] - 40, pygame.mouse.get_pos()[1] + 140))
+            pantalla.blit(texto_θ, rect_texto1)
             
         pantalla.blit(barra_img, (0,0))
         boton_cerrar.dibujar(pantalla)
