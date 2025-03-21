@@ -40,12 +40,12 @@ def potencial_en(cargas, x, y):
             V += config.K * carga.q / (np.sqrt(r) * 10**7 *5)
     return V
     
-def calcular_campo_potencial(cargas, ancho, alto):
-    x = np.arange(ancho)
-    y = np.arange(alto)
+def calcular_campo_potencial(cargas, ancho, alto, step = 10):
+    x = np.arange(0, ancho, step)
+    y = np.arange(0, alto, step)
     xx, yy = np.meshgrid(x, y)
 
-    V = np.zeros((alto, ancho), dtype=float)
+    V = np.zeros((len(y), len(x)), dtype=float)
 
     for carga in cargas:
         x_q, y_q, q = carga.x, carga.y, carga.q
@@ -56,7 +56,7 @@ def calcular_campo_potencial(cargas, ancho, alto):
     return V
 
 def obtener_color_potencial(potencial):
-    potencial_max = 7.0
+    potencial_max = 6.0
     alpha = np.clip(abs(potencial) / potencial_max, 0, 1) * 255 
     rojo = np.where(potencial > 0, 255, 0)  
     azul = np.where(potencial < 0, 255, 0) 
@@ -64,6 +64,27 @@ def obtener_color_potencial(potencial):
     rgba = np.dstack((rojo, verde, azul, alpha)).astype(np.uint8)
 
     return rgba
+
+
+def dibujar_flecha(pantalla, inicio, final, color, largoPunta=10):
+    x1,y1 = inicio
+    x2,y2 = final
+
+    pygame.draw.line(pantalla, color, (x1,y1), (x2,y2), 1)
+    angulo = math.atan2(y2 - y1, x2 - x1)
+    
+    punta_flecha1 = (
+        x2 - largoPunta * math.cos(angulo - math.pi / 6),
+        y2 - largoPunta * math.sin(angulo - math.pi / 6)
+    )
+
+    punta_flecha2 = (
+        x2 - largoPunta * math.cos(angulo + math.pi / 6),
+        y2 - largoPunta * math.sin(angulo + math.pi / 6)
+    )
+
+    pygame.draw.lines(pantalla, color, closed = False, points =[final, punta_flecha1, punta_flecha2], width=1)
+
 
 def campo_electrico(x, y, cargas):
     ex, ey = 0, 0
@@ -92,11 +113,13 @@ def dibujar_campo():
                     ex += e * math.cos(angulo)
                     ey += e * math.sin(angulo)
             magnitud = math.sqrt(ex ** 2 + ey ** 2)
+            
             if magnitud > 0:
-                ex, ey = ex * magnitud / config.K, ey * magnitud / config.K
+                ex, ey = (ex / magnitud) * 5 * 4 / (1 + 2.7*10**9/magnitud**2), (ey / magnitud) * 5 * 4 / (1 + 2.7*10**9/magnitud**2)
                 factor = min(magnitud ** (3/5) / 1000, 1.4)
-                dibujar_imagen(pantalla, "Imagenes/vectorSmall.png", (x, y), 0.4, 0.4*factor, 180 + math.degrees(math.atan2(ex,ey)))
+                #dibujar_imagen(pantalla, "Imagenes/vectorSmall.png", (x, y), 0.4, 0.4*factor, 180 + math.degrees(math.atan2(ex,ey)))
                 #pygame.draw.line(pantalla, config.COLOR_CAMPO, (x, y), (x + ex, y + ey), 1)
+                dibujar_flecha(pantalla, (x-ex/2, y-ey/2), (x + ex/2, y+ ey/2), config.COLOR_CAMPO, 5*factor)
 
 #Creacion de botones
 boton_dinamico = Boton(15, 15, "Imagenes/estaticoBoton.png", "Imagenes/estaticoBotonHover.png", "Imagenes/dinamicoBoton.png", "Imagenes/dinamicoBotonHover.png", 0.6)
@@ -179,11 +202,13 @@ while ejecutando:
     #Dibujar gradiente de voltaje
         
     if not config.ANIMANDO and mostrar_voltaje and len(cargas) >= 1:
-        campo_potencial = calcular_campo_potencial(cargas, config.ANCHO, config.ALTO)
+        campo_potencial = calcular_campo_potencial(cargas, config.ANCHO, config.ALTO, 3)
 
         campo_colores = obtener_color_potencial(campo_potencial.T)
         
-        gradiente = make_surface_rgba(campo_colores)
+        gradiente_reducido = make_surface_rgba(campo_colores)
+
+        gradiente = pygame.transform.scale(gradiente_reducido, (config.ANCHO, config.ALTO))
 
         # Draw the surface onto the screen
         pantalla.blit(gradiente, (0, 0))
@@ -203,9 +228,9 @@ while ejecutando:
 
     fps = reloj.get_fps()
 
-    fps_text = fuente.render(f"FPS: {int(fps)}", True, (255, 255, 255))
-    pantalla.blit(fuente.render(f"Cargas: {len(cargas)}", True, (255, 255, 255)), (1000, 680))
-    pantalla.blit(fps_text, (1000, 700))
+    fps_text = fuente.render(f"FPS: {int(fps)}", True, (255, 0, 0))
+    pantalla.blit(fuente.render(f"Cargas: {len(cargas)}", True, (255, 0, 205)), (810, 510))
+    pantalla.blit(fps_text, (810, 480))
 
     #Dibujar botones
     boton_dinamico.dibujar(pantalla)
