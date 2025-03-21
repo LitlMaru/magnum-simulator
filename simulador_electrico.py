@@ -4,6 +4,9 @@ import math
 from Boton import Boton
 from Carga import Carga
 import config
+import Menu
+import ctypes
+import pygetwindow as gw    
 from Utilidades import make_surface_rgba, dibujar_imagen
 
 pygame.init()
@@ -11,14 +14,18 @@ pantalla = pygame.display.set_mode((config.ANCHO, config.ALTO))
 reloj = pygame.time.Clock()
 fuente = pygame.font.Font(None, 25)
 
+hwnd = ctypes.windll.user32.GetForegroundWindow()
+
+# Cargar la imagen de fondo y ajustarla al tamaño de la ventana
+barra_img = pygame.image.load("Imagenes/barraTitulo.png")
+barra_img = pygame.transform.scale(barra_img, (config.ANCHO, 59))
+
 #Imagen para el indicador de potencial
 meter_img = pygame.image.load("Imagenes/medidorPotencial.png").convert_alpha()
 meter_img = pygame.transform.scale(meter_img, (128, 132))
 meter_rect = meter_img.get_rect()
-
 cargas = []
 carga_seleccionada = None
-carga_a_eliminar = None
 mostrar_potencial = False
 mostrar_voltaje = False
 
@@ -42,7 +49,7 @@ def potencial_en(cargas, x, y):
     
 def calcular_campo_potencial(cargas, ancho, alto, step = 10):
     x = np.arange(0, ancho, step)
-    y = np.arange(0, alto, step)
+    y = np.arange(59, alto, step)
     xx, yy = np.meshgrid(x, y)
 
     V = np.zeros((len(y), len(x)), dtype=float)
@@ -102,7 +109,7 @@ def campo_electrico(x, y, cargas):
 
 def dibujar_campo():
     for x in range(0, config.ANCHO, config.SEPARACION_PUNTOS):
-        for y in range(0, config.ALTO, config.SEPARACION_PUNTOS):
+        for y in range(59, config.ALTO, config.SEPARACION_PUNTOS):
             ex, ey = 0, 0
             for carga in cargas:
                 dx, dy = x - carga.x, y - carga.y
@@ -121,129 +128,153 @@ def dibujar_campo():
                 #pygame.draw.line(pantalla, config.COLOR_CAMPO, (x, y), (x + ex, y + ey), 1)
                 dibujar_flecha(pantalla, (x-ex/2, y-ey/2), (x + ex/2, y+ ey/2), config.COLOR_CAMPO, 5*factor)
 
+boton_menu = pygame.Rect(40,0, 160, 89)
+boton_cerrar = Boton(config.ANCHO - 59, 0, "Imagenes/cerrar.png", "Imagenes/cerrarHover.png", "Imagenes/cerrar.png", "Imagenes/cerrarHover.png", 2/3)
+boton_minimizar = Boton(config.ANCHO - 118, 0, "Imagenes/minimizar.png", "Imagenes/minimizarHover.png", "Imagenes/minimizar.png", "Imagenes/minimizarHover.png", 2/3)
+
 #Creacion de botones
-boton_dinamico = Boton(15, 15, "Imagenes/estaticoBoton.png", "Imagenes/estaticoBotonHover.png", "Imagenes/dinamicoBoton.png", "Imagenes/dinamicoBotonHover.png", 0.6)
-boton_animar = Boton(15, 55, "Imagenes/iniciarAnimacionBoton.png", "Imagenes/iniciarAnimacionHover.png", "Imagenes/detenerAnimacionBoton.png", "Imagenes/detenerAnimacionHover.png", 0.6)
-boton_resetear = Boton(15, 100, "Imagenes/resetearBoton.png", "Imagenes/resetearBotonHover.png", None, None, 0.6) 
-boton_positivo = Boton(900, 15, "Imagenes/cargaPositivaBoton.png", "Imagenes/cargaPositivaBotonHover.png", None, None, 0.5)
-boton_negativo = Boton(900, 75, "Imagenes/cargaNegativaBoton.png", "Imagenes/cargaNegativaBotonHover.png", None, None, 0.5)
-checkbox_potencial = Boton(860, 140, "Imagenes/checkboxPotencial.png", "Imagenes/checkboxPotencial.png", "Imagenes/checkboxPotencialVerde.png", "Imagenes/checkboxPotencialVerde.png", 0.6)
-checkbox_voltaje = Boton(860, 190, "Imagenes/Voltaje.png", "Imagenes/Voltaje.png", "Imagenes/VoltajeVerde.png", "Imagenes/VoltajeVerde.png", 0.55)
+boton_dinamico = Boton(15, 74, "Imagenes/estaticoBoton.png", "Imagenes/estaticoBotonHover.png", "Imagenes/dinamicoBoton.png", "Imagenes/dinamicoBotonHover.png", 0.6)
+boton_animar = Boton(15, 114, "Imagenes/iniciarAnimacionBoton.png", "Imagenes/iniciarAnimacionHover.png", "Imagenes/detenerAnimacionBoton.png", "Imagenes/detenerAnimacionHover.png", 0.6)
+boton_resetear = Boton(15, 159, "Imagenes/resetearBoton.png", "Imagenes/resetearBotonHover.png", None, None, 0.6) 
+boton_positivo = Boton(900, 74, "Imagenes/cargaPositivaBoton.png", "Imagenes/cargaPositivaBotonHover.png", None, None, 0.5)
+boton_negativo = Boton(900, 134, "Imagenes/cargaNegativaBoton.png", "Imagenes/cargaNegativaBotonHover.png", None, None, 0.5)
+checkbox_potencial = Boton(860, 199, "Imagenes/checkboxPotencial.png", "Imagenes/checkboxPotencial.png", "Imagenes/checkboxPotencialVerde.png", "Imagenes/checkboxPotencialVerde.png", 0.6)
+checkbox_voltaje = Boton(860, 249, "Imagenes/Voltaje.png", "Imagenes/Voltaje.png", "Imagenes/VoltajeVerde.png", "Imagenes/VoltajeVerde.png", 0.55)
 
-ejecutando = True
-while ejecutando:
+def main():
+    global cargas, carga_seleccionada, mostrar_potencial, mostrar_voltaje, id_carga
+    ejecutando = True
+    while ejecutando:
+        pantalla.fill(config.COLOR_FONDO)
+      
+        #Escribir potencial en el indicador de potencial
+        mx, my = pygame.mouse.get_pos()
+        meter_rect.topleft = (mx - 64, my - 22)
 
-    pantalla.fill(config.COLOR_FONDO)
+        V = potencial_en(cargas, mx, my)
+        texto_potencial = fuente.render(f"{V:.2f} V", True, (255, 255, 255))
 
-    #Escribir potencial en el indicador de potencial
-    mx, my = pygame.mouse.get_pos()
-    meter_rect.topleft = (mx - 64, my - 22)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                ejecutando = False
 
-    V = potencial_en(cargas, mx, my)
-    texto_potencial = fuente.render(f"{V:.2f} V", True, (255, 255, 255))
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if boton_menu.collidepoint(event.pos): 
+                    Menu.main()
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            ejecutando = False
+                elif event.pos[1] < 59:
+                    dragging = True
+                    offset_x, offset_y = event.pos
+                    ctypes.windll.user32.ReleaseCapture()
+                    ctypes.windll.user32.SendMessageW(hwnd, 0xA1, 2, 0)  # Move window
 
-        #Mover cargas usando el mouse
-        elif event.type == pygame.MOUSEBUTTONDOWN and not boton_animar.activo:
-            mx, my = pygame.mouse.get_pos()
-            for carga in cargas:
-                if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
-                    carga_seleccionada = carga
-                    break
-
-            if event.button == 3:
-                for carga in cargas: 
+            #Mover cargas usando el mouse
+            elif event.type == pygame.MOUSEBUTTONDOWN and not boton_animar.activo:
+                mx, my = pygame.mouse.get_pos()
+                for carga in cargas:
                     if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
-                        cargas = [carga for carga in cargas if carga.id != carga_seleccionada.id]
+                        carga_seleccionada = carga
                         break
 
-        elif event.type == pygame.MOUSEBUTTONUP:
-            carga_seleccionada = None
-        elif event.type == pygame.MOUSEMOTION and carga_seleccionada and not boton_animar.activo:
-            carga_seleccionada.x, carga_seleccionada.y = pygame.mouse.get_pos()
+                if event.button == 3:
+                    for carga in cargas: 
+                        if math.hypot(mx - carga.x, my - carga.y) < config.RADIO_CARGA:
+                            cargas = [carga for carga in cargas if carga.id != carga_seleccionada.id]
+                            break
+
+            elif event.type == pygame.MOUSEBUTTONUP:
+                carga_seleccionada = None
+                dragging = False
+            elif event.type == pygame.MOUSEMOTION and carga_seleccionada and not boton_animar.activo:
+                carga_seleccionada.x, carga_seleccionada.y = pygame.mouse.get_pos()
+            
+            #Manejar eventos de botones
+            if boton_cerrar.controlar_eventos(event):
+                ejecutando = False
+            if boton_minimizar.controlar_eventos(event):
+                ventana = gw.getActiveWindow()
+                ventana.minimize()
+
+            if boton_dinamico.controlar_eventos(event):
+                config.CARGA_PRUEBA = boton_dinamico.activo
+            
+            if boton_animar.controlar_eventos(event):
+                config.ANIMANDO = boton_animar.activo
+
+            if boton_resetear.controlar_eventos(event):
+                cargas.clear()
+
+            if boton_positivo.controlar_eventos(event):
+                id_carga+=1
+                if config.CARGA_PRUEBA:
+                    cargas.append(Carga(config.ANCHO/2, config.ALTO/2, 1, True, pantalla))
+                    cargas[-1].id = id_carga
+                else:
+                    cargas.append(Carga(config.ANCHO/2, config.ALTO/2, 1, False, pantalla))
+                    cargas[-1].id = id_carga
+
+            if boton_negativo.controlar_eventos(event):
+                id_carga+=1
+                if config.CARGA_PRUEBA:
+                    cargas.append(Carga(config.ANCHO/2, config.ALTO/2, -1, True, pantalla))
+                    cargas[-1].id = id_carga
+                else:
+                    cargas.append(Carga(config.ANCHO/2, config.ALTO/2, -1, False, pantalla))
+                    cargas[-1].id = id_carga
+
+            if checkbox_potencial.controlar_eventos(event):
+                mostrar_potencial = not mostrar_potencial
+
+            if checkbox_voltaje.controlar_eventos(event):
+                mostrar_voltaje = not mostrar_voltaje
+
+        #Dibujar gradiente de voltaje
+            
+        if not config.ANIMANDO and mostrar_voltaje and len(cargas) >= 1:
+            campo_potencial = calcular_campo_potencial(cargas, config.ANCHO, config.ALTO, 3)
+
+            campo_colores = obtener_color_potencial(campo_potencial.T)
+            
+            gradiente_reducido = make_surface_rgba(campo_colores)
+
+            gradiente = pygame.transform.scale(gradiente_reducido, (config.ANCHO, config.ALTO - 59))
+
+            # Draw the surface onto the screen
+            pantalla.blit(gradiente, (0, 59))
+
+        #Cambiar mouse por indicador de potencial
+        if mostrar_potencial:
+            pygame.mouse.set_visible(False)
+        else: pygame.mouse.set_visible(True)
+
+        #Dibujar campo y cargas
+        dibujar_campo()
+        for carga in cargas:
+            carga.actualizar(cargas)
         
-        #Manejar eventos de botones
-        if boton_dinamico.controlar_eventos(event):
-            config.CARGA_PRUEBA = boton_dinamico.activo
-        
-        if boton_animar.controlar_eventos(event):
-            config.ANIMANDO = boton_animar.activo
+        for carga in cargas:
+            carga.dibujar()
 
-        if boton_resetear.controlar_eventos(event):
-            cargas.clear()
+        #Dibujar botones
+        boton_dinamico.dibujar(pantalla)
+        boton_animar.dibujar(pantalla)
+        boton_resetear.dibujar(pantalla)
+        boton_positivo.dibujar(pantalla)
+        boton_negativo.dibujar(pantalla)
+        checkbox_potencial.dibujar(pantalla)
+        checkbox_voltaje.dibujar(pantalla)
+  
+        if mostrar_potencial: dibujar_potencial(texto_potencial)
 
-        if boton_positivo.controlar_eventos(event):
-            id_carga+=1
-            if config.CARGA_PRUEBA:
-                cargas.append(Carga(config.ANCHO/2, config.ALTO/2, 1, True, pantalla))
-                cargas[-1].id = id_carga
-            else:
-                cargas.append(Carga(config.ANCHO/2, config.ALTO/2, 1, False, pantalla))
-                cargas[-1].id = id_carga
+        pantalla.blit(barra_img, (0,0))
+        boton_cerrar.dibujar(pantalla)
+        boton_minimizar.dibujar(pantalla)
 
-        if boton_negativo.controlar_eventos(event):
-            id_carga+=1
-            if config.CARGA_PRUEBA:
-                cargas.append(Carga(config.ANCHO/2, config.ALTO/2, -1, True, pantalla))
-                cargas[-1].id = id_carga
-            else:
-                cargas.append(Carga(config.ANCHO/2, config.ALTO/2, -1, False, pantalla))
-                cargas[-1].id = id_carga
 
-        if checkbox_potencial.controlar_eventos(event):
-            mostrar_potencial = not mostrar_potencial
+        pygame.display.flip()
+        reloj.tick(config.FPS)
 
-        if checkbox_voltaje.controlar_eventos(event):
-            mostrar_voltaje = not mostrar_voltaje
+    pygame.quit()
 
-    #Dibujar gradiente de voltaje
-        
-    if not config.ANIMANDO and mostrar_voltaje and len(cargas) >= 1:
-        campo_potencial = calcular_campo_potencial(cargas, config.ANCHO, config.ALTO, 3)
-
-        campo_colores = obtener_color_potencial(campo_potencial.T)
-        
-        gradiente_reducido = make_surface_rgba(campo_colores)
-
-        gradiente = pygame.transform.scale(gradiente_reducido, (config.ANCHO, config.ALTO))
-
-        # Draw the surface onto the screen
-        pantalla.blit(gradiente, (0, 0))
-
-    #Cambiar mouse por indicador de potencial
-    if mostrar_potencial:
-        pygame.mouse.set_visible(False)
-    else: pygame.mouse.set_visible(True)
-
-    #Dibujar campo y cargas
-    dibujar_campo()
-    for carga in cargas:
-        carga.actualizar(cargas)
-    
-    for carga in cargas:
-        carga.dibujar()
-
-    fps = reloj.get_fps()
-
-    fps_text = fuente.render(f"FPS: {int(fps)}", True, (255, 0, 0))
-    pantalla.blit(fuente.render(f"Cargas: {len(cargas)}", True, (255, 0, 205)), (810, 510))
-    pantalla.blit(fps_text, (810, 480))
-
-    #Dibujar botones
-    boton_dinamico.dibujar(pantalla)
-    boton_animar.dibujar(pantalla)
-    boton_resetear.dibujar(pantalla)
-    boton_positivo.dibujar(pantalla)
-    boton_negativo.dibujar(pantalla)
-    checkbox_potencial.dibujar(pantalla)
-    checkbox_voltaje.dibujar(pantalla)
-
-    if mostrar_potencial: dibujar_potencial(texto_potencial)
-
-    pygame.display.flip()
-    reloj.tick(config.FPS)
-
-pygame.quit()
+if __name__ == "__main__":
+    main()
